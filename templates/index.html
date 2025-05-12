@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+`<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <link href="https://cdn.jsdelivr.net/npm/remixicon@3.2.0/fonts/remixicon.css" rel="stylesheet">
+   <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+   <title>StoryGenAi</title>
+   <style>
+      #image-preview-container {
+         display: flex;
+         justify-content: center;
+         align-items: center;
+         margin-top: 20px;
+         border: 2px solid #ddd;
+         padding: 20px;
+         border-radius: 10px;
+         background-color: #f8f8f8;
+         max-width: 100%;
+      }
+      #preview{
+         max-width: 90%;
+         max-height: 400px;
+         border-radius: 10px;
+         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+         display: none;
+      }
+      #image-preview {
+         max-width: 90%;
+         max-height: 400px;
+         border-radius: 10px;
+         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+         display: none; /* Initially hidden */
+      }
+
+      .form-group {
+         margin-bottom: 20px;
+      }
+
+      .input-field {
+         width: 100%;
+         padding: 10px;
+         border-radius: 5px;
+         border: 1px solid #ccc;
+         font-size: 16px;
+      }
+
+      .btn {
+         background-color: #4CAF50;
+         color: white;
+         padding: 15px 20px;
+         border: none;
+         border-radius: 5px;
+         font-size: 16px;
+         cursor: pointer;
+      }
+
+      .btn:hover {
+         background-color: #45a049;
+      }
+
+      #story-display {
+         margin-top: 30px;
+      }
+
+      #generated-story {
+         font-size: 1.2rem;
+         color: #333;
+         line-height: 1.6;
+      }
+
+      .footer {
+         text-align: center;
+         padding: 20px;
+         background-color: #222;
+         color: white;
+      }
+      #generated-image-preview {
+         margin-bottom: 20px;
+         display: flex;
+         justify-content: center;
+         align-items: center;
+         padding: 20px;
+         border: 2px solid #ddd;
+         border-radius: 10px;
+         background-color: #f8f8f8;
+         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+         max-width: 100%;
+         overflow: hidden;
+         margin-top:10px;
+      }
+      
+      #generated-image-preview img {
+         max-width: 90%;
+         max-height: 400px;
+         border-radius: 10px;
+         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+         object-fit: cover;
+      }
+      
+   </style>
+   <link href="https://fonts.googleapis.com/css2?family=Chewy&display=swap" rel="stylesheet">
+   <link href="https://fonts.googleapis.com/css2?family=Bubblegum+Sans&display=swap" rel="stylesheet">
+
+</head>
+<body>
+   <header class="header">
+      <nav class="nav container">
+         <div class="nav__data">
+            <a href="#" class="nav__logo">Story<p class="genai">GenAi</p></a>
+            <div class="nav__toggle" id="nav-toggle">
+               <i class="ri-menu-line nav__burger"></i>
+               <i class="ri-close-line nav__close"></i>
+            </div>
+         </div>
+
+         <div class="nav__menu" id="nav-menu">
+            <ul class="nav__list">
+               <li><a href="#" class="nav__link">Home</a></li>
+               <li class="dropdown__item">
+                  <div class="nav__link">
+                     Analytics <i class="ri-arrow-down-s-line dropdown__arrow"></i>
+                  </div>
+                  <ul class="dropdown__menu">
+                     <li><a href="#" class="dropdown__link"><i class="ri-pie-chart-line"></i> Overview</a></li>
+                     <li class="dropdown__subitem">
+                        <div class="dropdown__link">
+                           <i class="ri-bar-chart-line"></i> Reports <i class="ri-add-line dropdown__add"></i>
+                        </div>
+                        <ul class="dropdown__submenu">
+                           <li><a href="#" class="dropdown__sublink"><i class="ri-file-list-line"></i> Documents</a></li>
+                        </ul>
+                     </li>
+                  </ul>
+               </li>
+               <li class="dropdown__item">
+                  <div class="nav__link">
+                     Users <i class="ri-arrow-down-s-line dropdown__arrow"></i>
+                  </div>
+                  <ul class="dropdown__menu">
+                     <li><a href="login.html" class="dropdown__link"><i class="ri-user-line"></i> Profiles</a></li>
+                     <li id="accounts-menu">
+                        <a href="#" class="dropdown__link" id="user-display"><i class="ri-user-line"></i> Accounts</a>
+                     </li>
+                     <li><a href="#" class="dropdown__link"><i class="ri-message-3-line"></i> Messages</a></li>
+                  </ul>
+               </li>
+               <li><a href="#" class="nav__link">Contact</a></li>
+            </ul>
+         </div>
+      </nav>
+   </header>
+
+   <main class="main container1">
+      <section class="storygen-section">
+         <h2>Generate Your Story</h2>
+         <form id="storygen-form" action="/generate-story" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="file-input">Upload Image</label>
+                <input
+                    id="file-input"
+                    name="image"
+                    class="input-field"
+                    type="file"
+                    accept="image/*"
+                    onchange="previewImage(event)"
+                />
+                {% if image_data %}
+               <div id="generated-image-preview" style="margin-bottom: 20px;">
+                  <img src="{{ image_data }}" alt="Uploaded Image Preview" style="max-width: 90%; max-height: 400px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);">
+               </div>
+               {% else %}
+               <div id="image-preview-container">
+                  <img id="image-preview" src="#" alt="Image Preview" />
+               </div>
+               {% endif %}
+
+            </div>
+            <div class="form-group">
+                <label for="text-prompt">Customize your story:</label>
+                <textarea id="text-prompt" name="prompt" rows="4" class="input-field" placeholder="Write any specifications....."></textarea>
+            </div>
+            <button type="submit" id="generate-btn" class="btn">Generate Story</button>
+         </form>
+
+         <section id="story-display" class="story-display">
+            <h3>Your Generated Story</h3>
+            <p id="generated-story">The story will appear here...</p>
+            <p id="story">{{ story }}</p>
+            <!-- <button id="kid-lang-btn" class="btn" onclick="convertToKidLanguage()">Explain in Kid's Language</button> -->
+            <p id="kid-story" style="display:none;"></p>
+         </section>
+         <div class="controls">
+         <div class="c1"><button id="read-aloud-btn" class="btn" onclick="readAloud()">Read Aloud</button></div>
+         <div class="c2"><button id="pause-btn" class="btn" onclick="pauseSpeech()">Pause</button></div>
+         <div class="c3"><button id="resume-btn" class="btn" onclick="resumeSpeech()">Resume</button></div>
+         </div>
+      </section>
+      <!-- <section class="storygen-section">
+         <h2>Additional Prompt</h2>
+         <form id="additional-prompt-form" action="/submit-prompt" method="POST">
+            <div class="form-group">
+               <label for="additional-prompt">Enter your prompt:</label>
+               <textarea id="additional-prompt" name="additional_prompt" rows="4" class="input-field" placeholder="Provide additional instructions..."></textarea>
+            </div>
+            <button type="submit" id="additional-btn" class="btn">Submit Prompt</button>
+         </form>
+      </section> -->
+   </main>
+   
+
+   <footer class="footer">
+      &copy; 2025 StoryGenAi. All rights reserved.
+   </footer>
+
+   <script>
+      function previewImage(event) {
+         const file = event.target.files[0];
+         const reader = new FileReader();
+         const preview = document.getElementById('image-preview');
+
+         reader.onload = function () {
+            preview.src = reader.result; // Set the preview image's source to the file's data URL
+            preview.style.display = 'block'; // Make the preview visible
+         };
+
+         if (file) {
+            reader.readAsDataURL(file); // Read the file as a data URL
+         }
+      }
+
+      // Speech synthesis logic
+      let utterance = null;
+      let isPaused = false;
+
+      function readAloud() {
+         const storyText = document.getElementById('kid-story').style.display === 'none'
+            ? document.getElementById('story').textContent
+            : document.getElementById('kid-story').textContent;
+
+         if (utterance && speechSynthesis.speaking) {
+            speechSynthesis.cancel();
+         }
+
+         utterance = new SpeechSynthesisUtterance(storyText);
+         utterance.lang = 'en-US';
+         utterance.rate = 1;
+         utterance.pitch = 1;
+         speechSynthesis.speak(utterance);
+         isPaused = false;
+      }
+
+      function pauseSpeech() {
+         if (speechSynthesis.speaking) {
+            speechSynthesis.pause();
+            isPaused = true;
+         }
+      }
+
+      function resumeSpeech() {
+         if (isPaused && !speechSynthesis.speaking) {
+            speechSynthesis.resume();
+            isPaused = false;
+         }
+      }
+   </script>
+</body>
+</html>
